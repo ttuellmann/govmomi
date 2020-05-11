@@ -42,6 +42,7 @@ type customize struct {
 	gateway   flags.StringList
 	netmask   flags.StringList
 	dnsserver flags.StringList
+	ip6       flags.StringList
 	kind      string
 }
 
@@ -68,6 +69,8 @@ func (cmd *customize) Register(ctx context.Context, f *flag.FlagSet) {
 	cmd.netmask = nil
 	f.Var(&cmd.dnsserver, "dns-server", "DNS server")
 	cmd.dnsserver = nil
+	f.Var(&cmd.ip6, "ip6", "IPv6 address")
+	cmd.ip6 = nil
 	f.StringVar(&cmd.kind, "type", "Linux", "Customization type if spec NAME is not specified (Linux|Windows)")
 }
 
@@ -232,6 +235,11 @@ func (cmd *customize) Run(ctx context.Context, f *flag.FlagSet) error {
 				nic.Adapter.DnsServerList = strings.Split(cmd.dnsserver[i], ",")
 			}
 		}
+	}
+
+	for i, ip6 := range cmd.ip6 {
+		nic := &spec.NicSettingMap[i]
+		nic.Adapter.IpV6Spec.Ip[0] = &types.CustomizationFixedIpV6{IpAddress: ip6, SubnetMask: 64}
 	}
 
 	task, err := vm.Customize(ctx, *spec)
